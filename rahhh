@@ -10,7 +10,7 @@ for i in range(25):
     x[i] = i 
 
 
-A_blood = np.ones(25) # amount of caffiene in mg of blood and brain compartement, will be filled by solver 
+A_blood = np.zeros(25) # amount of caffiene in mg of blood and brain compartement, will be filled by solver 
 A_gut = []
 
 k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination 
@@ -39,16 +39,17 @@ eq'n:
 '''
 
 
-
+# are we gonna do RK4 method 
 #solver
 
 
 
 # code for plotting 
+plt.minorticks_on()
 plt.plot(x,A_blood)
 plt.show()
 
-#plt.minorticks_on()
+
 #plt.imsave('graph.png')
 
 
