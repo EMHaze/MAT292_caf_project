@@ -3,10 +3,26 @@ import matplotlib.pyplot as plt
 
 
 x = [] # time elasped 
-y = [] # concentration, will be filled by solver 
+A_comp1 = [] # amount of caffiene in mg of blood and brain compartement, will be filled by solver 
 k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination 
 bio_acc = 1 # more needed
 caf_drink = 100 # in mg 
+A_o = bio_acc*caf_drink
+blood = 7 # liters 
+half_life = 4; 
+k_bt = 0.1 # blood to brain 
+k_tb = 0.1 # blood to brain see if equal 
+
+
+'''. 
+
+current model: 2 compartment 
+
+eq'n: 
+
+
+
+'''
 
 
 
