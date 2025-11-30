@@ -2,8 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-x = [] # time elasped 
-A_comp1 = [] # amount of caffiene in mg of blood and brain compartement, will be filled by solver 
+#x = np.zeros(25) # time elasped 
+
+x = np.zeros(25)
+
+for i in range(25): 
+    x[i] = i 
+
+
+A_blood = np.ones(25) # amount of caffiene in mg of blood and brain compartement, will be filled by solver 
+A_gut = []
+
 k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination 
 bio_acc = 1 # more needed
 caf_drink = 100 # in mg 
@@ -13,10 +22,15 @@ half_life = 4;
 k_bt = 0.1 # blood to brain 
 k_tb = 0.1 # blood to brain see if equal 
 
+time_max = 24 # hours 
+rBlood = 100
+rTissue = 0 # 
+
+
 
 '''. 
 
-current model: 2 compartment 
+current model: 3 compartment (gut included, just recieves A_o of caffeine)
 
 eq'n: 
 
@@ -31,8 +45,11 @@ eq'n:
 
 
 # code for plotting 
-plt.minorticks_on()
-plt.imsave('graph.png')
+plt.plot(x,A_blood)
+plt.show()
+
+#plt.minorticks_on()
+#plt.imsave('graph.png')
 
 
 
