@@ -1,2 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+x = [] # time elasped 
+y = [] # concentration, will be filled by solver 
+k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination 
+bio_acc = 1 # more needed
+caf_drink = 100 # in mg 
+
+
+
+#solver
+
+
+
+# code for plotting 
+plt.minorticks_on()
+plt.imsave('graph.png')
+
+
+
