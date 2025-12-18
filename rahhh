@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-step_size = 1 # per hour
+step_size = 0.5 # number of hour
 time_h = 24
 n_steps = int(time_h/step_size) + 1
 x = np.zeros(n_steps)
@@ -12,7 +12,7 @@ for i in range(n_steps):
 
 k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination 
 bio_acc = 1 # more needed
-caf_drink = 185.6 # in mg 
+caf_drink = 1856 # in mg 
 A_o = bio_acc*caf_drink
 blood = 7 # liters 
 half_life = 4; 
@@ -109,6 +109,8 @@ for count in range(1, n_steps):
    RK_blood[count] = RK_blood[count-1] + (step_size/6)*(k_one_blood + 3*k_two_blood + 3*k_three_blood + k_f_blood)
 
 
+print(RK_blood)
+print(A_blood_iEuler)
 
 
 # code for plotting 
@@ -120,7 +122,8 @@ plt.ylabel("Amount of caffeine: milligrams")
 plt.title("Caffeine (mg) in blood vs. Time (h) after consumption of caffiene pill (185.6 mg)")
 
 plt.show()
-plt.imsave('graph.png')
+
+
 
 # repeated doses, needed either indicator function or 
 
