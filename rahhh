@@ -16,9 +16,7 @@ k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination (e.g. k_bt and k_tb hav
 bio_acc = 1 # more needed
 caf_drink = 185.6 # in mg 
 A_o = bio_acc*caf_drink
-blood = 7 # liters 
-half_life = 4; 
-k_bt = 0.33 # bloodstream to tissue
+k_bt = 0.3 # bloodstream to tissue
 k_tb = 0.09 # tissue to bloodstream
 k_meta = 0.1 #metabolism 
 k_absg = 0.30 # absorption by the GI
@@ -44,9 +42,9 @@ RK_gut[0] = A_o
 A_blood_forcing = np.zeros(n_steps)
 A_gut_forcing = np.zeros(n_steps)
 A_impulse = np.zeros(n_steps)
-frq = 2 # once per hour inverse, so 8 is every 8 hours
+frq = 24 # once per hour inverse, so 8 is every 8 hours
 for i in range(n_steps): 
-   if i % (frq*pow(step_size, -1)) == 0:
+   if i % frq == 0:
       A_impulse[i] = A_o
 
 A_gut_forcing = A_gut_forcing + A_impulse
@@ -82,27 +80,33 @@ for i in range(1, n_steps):
    A_gut_iEuler[i] = A_gut_iEuler[i-1] + 0.5*step_size*(dgut_next + dgut_n) 
 '''
 
-def iEuler_gut(GutArray): 
-   global n_step, n_size
-   for i in range(1,n_steps): 
-      GutArray[i] = GutArray[i-1] + 0.5*step_size*gut_derive(GutArray[i-1])
-   
-   return GutArray
 
 
-A_gut_iEuler = iEuler_gut(A_gut_iEuler)
-
-print(A_gut_iEuler)
 
 
 # blood and tissue 
 
 def iEuler_dependents(BloodArray,TissueArray, GutArray): # the gut array is already filled
-   global n_step, n_size 
+   global n_steps, step_size
    for i in range(1,n_steps):
-      BloodArray[i] = BloodArray[i-1] + step_size*bld_deriv(BloodArray[i-1], GutArray[i-1], TissueArray[i-1])
-      TissueArray[i] = TissueArray[i-1] + step_size*tissue_deriv(TissueArray[i-1], BloodArray[i-1])
-   return (TissueArray, BloodArray)
+      k1g = gut_derive(GutArray[i-1])
+      k2g = gut_derive(GutArray[i-1] + step_size*k1g)
+      k1_b = bld_deriv(BloodArray[i-1], GutArray[i-1], TissueArray[i-1])
+      k1_t = tissue_deriv(TissueArray[i-1],BloodArray[i-1])
+      k2_b = bld_deriv(BloodArray[i-1] + step_size*k1_b, GutArray[i-1] + k1g*step_size, TissueArray[i-1]+step_size*k1_t)
+      k2_t = tissue_deriv(TissueArray[i-1]+step_size*k1_t, BloodArray[i-1] +step_size*k1_b)
+      GutArray[i] = GutArray[i-1] + 0.5*step_size*(k1g+k2g)
+      BloodArray[i] = BloodArray[i-1] + step_size*0.5*(k1_b+k2_b)
+      TissueArray[i] = TissueArray[i-1] + step_size*0.5*(k1_t+k2_t)
+      '''if BloodArray[i] <= 0: # done as cannot have negative amounts of caffiene 
+         BloodArray[i] = 0
+      if TissueArray[i] <= 0: 
+         TissueArray[i] = 0
+      if GutArray[i] <= 0: 
+         GutArray[i] = 0
+      
+'''
+   return (TissueArray, BloodArray, GutArray)
 
 
 '''for count in range(1,n_steps): 
@@ -119,60 +123,45 @@ for i in range(1,n_steps):
    A_t_iEuler[i] = A_t_iEuler[i-1] + 0.5*step_size*(dt_next + dt_n)'''
    
 
-A_blood_iEuler = iEuler_dependents(A_blood_iEuler,A_t_iEuler,A_gut_iEuler)[1]
-A_t_iEuler = iEuler_dependents(A_blood_iEuler,A_t_iEuler,A_gut_iEuler)[0]
+Ans_Euler = iEuler_dependents(A_blood_iEuler,A_t_iEuler,A_gut_iEuler)
+A_gut_iEuler = Ans_Euler[2]
+A_blood_iEuler = Ans_Euler[1]
+A_t_iEuler = Ans_Euler[0]
 
 
 
-# Gut RK4 
 
-def g_RK4(GutArray):
-   global n_steps, n_size 
+# RK4 Calculations 
+
+def dependent_RK4(GutArray, BloodArray, TissueArray,REPEATS,freq): 
+   global n_steps, step_size, A_o
    for i in range(1,n_steps): 
-      k1 = gut_derive(GutArray[i-1])
-      k2 = gut_derive(GutArray[i-1] + 0.5*step_size*k1)
-      k3 = gut_derive(GutArray[i-1] + 0.5*step_size*k2)
-      k4 = gut_derive(GutArray[i-1] + 0.5*step_size*k3)
-      GutArray[i] = GutArray[i-1] + (step_size/6)*(k1 + 3*k2 + 3*k3 + k4)
-      if GutArray[i] <= 0: 
-         GutArray[i] = 0
-
-   return GutArray
-
-
-def g_impulse(GutArray):
-   k1 = gut_derive(GutArray[i-1])
-   k2 = gut_derive(GutArray[i-1] + 0.5*step_size*k1)
-   k3 = gut_derive(GutArray[i-1] + 0.5*step_size*k2)
-   k4 = gut_derive(GutArray[i-1] + 0.5*step_size*k3)
-   if GutArray[i] == 0:
-      GutArray[i] = GutArray[i-1] + (step_size/6)*(k1 + 3*k2 + 3*k3 + k4)
-   else: 
-      GutArray[i] = GutArray[i] + GutArray[i-1] + (step_size/6)*(k1 + 3*k2 + 3*k3 + k4)
-   return GutArray
-
-
-
-# blood RK4 Calculations 
-
-def dependent_RK4(GutArray, BloodArray, TissueArray): 
-   global n_steps, n_size
-   for i in range(1,n_steps): 
+      k1g = gut_derive(GutArray[i-1])
+      k2g = gut_derive(GutArray[i-1] + 0.5*step_size*k1g)
+      k3g = gut_derive(GutArray[i-1] + 0.5*step_size*k2g)
+      k4g = gut_derive(GutArray[i-1] + step_size*k3g)
       k1_b = bld_deriv(BloodArray[i-1], GutArray[i-1], TissueArray[i-1])
-      k1_t = tissue_deriv(GutArray[i-1], TissueArray[i-1])
-      k2_b = bld_deriv(BloodArray[i-1] + 0.5*step_size*k1_b, GutArray[i-1], TissueArray[i-1]+0.5*step_size*k1_t)
-      k2_t = tissue_deriv(BloodArray[i-1] +0.5*step_size*k1_b, TissueArray[i-1]+0.5*step_size*k1_t)
-      k3_b = bld_deriv(BloodArray[i-1] +0.5*step_size*k2_b, GutArray[i-1], TissueArray[i-1]+0.5*step_size*k2_t)
-      k3_t = tissue_deriv(BloodArray[i-1] +0.5*step_size*k2_b, TissueArray[i-1]+0.5*step_size*k2_t)
-      k4_b = bld_deriv(BloodArray[i-1] +0.5*step_size*k3_b, GutArray[i-1], TissueArray[i-1]+0.5*step_size*k3_t)
-      k4_t = tissue_deriv(BloodArray[i-1] +0.5*step_size*k3_b, TissueArray[i-1]+0.5*step_size*k3_t)
-      BloodArray[i] = BloodArray[i-1] + (step_size/6)*(k1_b + 3*k2_b + 3*k3_b + k4_b)
-      TissueArray[i] = TissueArray[i-1] + (step_size/6)*(k1_t + 3*k2_t + 3*k3_t + k4_t)
-      if BloodArray[i] <= 0: # done as cannot have negative amounts of caffiene 
+      k1_t = tissue_deriv(TissueArray[i-1],BloodArray[i-1] )
+      k2_b = bld_deriv(BloodArray[i-1] + 0.5*step_size*k1_b, GutArray[i-1]+0.5*step_size*k1g, TissueArray[i-1]+0.5*step_size*k1_t)
+      k2_t = tissue_deriv(TissueArray[i-1]+0.5*step_size*k1_t,BloodArray[i-1] +0.5*step_size*k1_b)
+      k3_b = bld_deriv(BloodArray[i-1] +0.5*step_size*k2_b, GutArray[i-1]+0.5*step_size*k2g, TissueArray[i-1]+0.5*step_size*k2_t)
+      k3_t = tissue_deriv(TissueArray[i-1]+0.5*step_size*k2_t, BloodArray[i-1] +0.5*step_size*k2_b)
+      k4_b = bld_deriv(BloodArray[i-1] +step_size*k3_b, GutArray[i-1]+step_size*k3g, TissueArray[i-1]+step_size*k3_t)
+      k4_t = tissue_deriv(TissueArray[i-1]+step_size*k3_t, BloodArray[i-1] +step_size*k3_b)
+      if REPEATS == True and i % freq == 0: 
+         GutArray[i] = GutArray[i-1] + (step_size/6)*(k1g+2*k2g+2*k3g+k4g) + A_o
+      else: 
+         GutArray[i] = GutArray[i-1] + (step_size/6)*(k1g+2*k2g+2*k3g+k4g)
+      BloodArray[i] = BloodArray[i-1] + (step_size/6)*(k1_b + 2*k2_b + 2*k3_b + k4_b)
+      TissueArray[i] = TissueArray[i-1] + (step_size/6)*(k1_t + 2*k2_t + 2*k3_t + k4_t)
+
+      '''if BloodArray[i] <= 0: # done as cannot have negative amounts of caffiene 
          BloodArray[i] = 0
       if TissueArray[i] <= 0: 
          TissueArray[i] = 0
-   return (BloodArray, TissueArray)
+      '''
+      
+   return (BloodArray, TissueArray, GutArray)
 
 
    
@@ -192,12 +181,10 @@ def dependent_RK4(GutArray, BloodArray, TissueArray):
 '''
 
 # Plotting 
-RK_gut = g_RK4(RK_gut)
-RK_blood = dependent_RK4(RK_gut,RK_blood,RK_tissue)[0]
-RK_tissue = dependent_RK4(RK_gut,RK_blood,RK_tissue)[1]
-RK_gutf = g_impulse(A_gut_forcing)
-RK_bforced = dependent_RK4(RK_gutf, np.zeros(n_steps), np.zeros(n_steps))[0]
-RK_tforced = dependent_RK4(RK_gutf, np.zeros(n_steps), np.zeros(n_steps))[1]
+answer_RK = dependent_RK4(RK_gut,RK_blood,RK_tissue,False, 12)
+RK_blood = answer_RK[0]
+RK_tissue = answer_RK[1]
+RK_gut = answer_RK[2]
 
 Volume_m = 0.3669*(pow(h,3)) + 0.03219*m + 0.06041
 Volume_f = 0.3561*(pow(h,3)) + 0.03308*m + 0.1889
@@ -238,11 +225,10 @@ for count in range(1, n_steps):
 
 # code for plotting 
 plt.minorticks_on()
-plt.plot(x,RK_bforced/Volume_f, marker='o')
+plt.plot(x,RK_blood/Volume_f, marker='.')
 plt.xlabel("Time elapsed: hours")
 plt.ylabel("Concentration of caffeine in blood: mg/m^3")
-plt.title("Concentration of Caffeine (mg/m^3) in blood vs. Time (h) after consumption of caffiene pill (185.6 mg)")
-
+plt.title("Concentration of Caffeine (mg/m^3) in blood vs. Time (h) after consumption of caffeine pill (185.6 mg)")
 plt.show()
 
 
