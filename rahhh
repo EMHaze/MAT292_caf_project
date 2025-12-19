@@ -16,13 +16,14 @@ k = 0.09 # 0.09 - 0.33 per h; is changeable; elimination (e.g. k_bt and k_tb hav
 bio_acc = 1 # bioavailability
 caf_drink = 185.6 # in mg 
 A_o = bio_acc*caf_drink
-k_bt = 0.1 # bloodstream to tissue
+k_bt = 0.8 # bloodstream to tissue
 k_tb = 0 # tissue to bloodstream
-k_meta = 0.1386 #metabolism 
+k_meta = 0.2 #metabolism 
 k_absg = 6.1402 # absorption by the GI
 h = 1.50 # height (m)
 m = 50 # weight (kg)
 
+# something is up with these constants but I dont know what rip 
 
 
 A_blood_iEuler = np.zeros(n_steps) # amount of caffiene in mg of blood and brain compartement, will be filled by solver 
@@ -55,7 +56,8 @@ def gut_derive(A_gut):
    return -k_absg*A_gut
 
 def bld_deriv(Abld, Ag, Atissue): 
-   global k_absg, k_bt
+   global k_absg, k_bt, k_meta
+   k_elim = 10 # should be in the range of 0.09 - 0.33
    return k_absg*Ag -(k_bt +k_meta)*Abld + k_tb * Atissue
 
 def tissue_deriv(Atissue, Abld):
