@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-step_size = 0.1 # number of hours in a step
+step_size = 0.1 # number of hours in a step, DO NOT CHANGE
 time_h = 24
 n_steps = int(time_h/step_size) + 1
 x = np.zeros(n_steps)
@@ -17,9 +17,9 @@ for i in range(n_steps):
 bio_acc = 1 # bioavailability/accessibility, very high for caffeine
 caf_drink = 185.6 # in mg 
 A_o = bio_acc*caf_drink # initial dose
-k_bt = 0.1 # bloodstream to tissue
-k_meta = 0.1 # metabolism/excretion of caffiene
-k_absg = 6.1402  # absorption by the GI, literature value 
+k_bt = 0.21 # bloodstream to tissue
+k_meta = 0.21 # metabolism/excretion of caffiene
+k_absg = 6.1402  # absorption by the GI, calculated from absorption of caffeine in GI 
 h = 1.50 # height (m)
 m = 50 # weight (kg)
 Volume_m = 0.3669*(pow(h,3)) + 0.03219*m + 0.06041
@@ -124,28 +124,16 @@ RK_blood = answer_RK[0]
 RK_tissue = answer_RK[1]
 RK_gut = answer_RK[2]
 
-
-
-
 # code for plotting 
 plt.minorticks_on()
-plt.plot(x,RK_blood/Volume_f, marker='.')
+plt.plot(x,0.1*A_blood_iEuler/Volume_f, marker='.')
 plt.xlabel("Time elapsed: hours")
 plt.ylabel("Concentration of caffeine in blood: mg/L")
-plt.title("Concentration of Caffeine (mg/L) in blood vs. Time (h) after consumption of caffeine pill (185.6 mg) using RK4")
+plt.title("Concentration of Caffeine (mg/L) in blood vs. Time (h) after consumption of caffeine pill (185.6 mg) using Improved Euler's Method")
 plt.show()
 
 
-#RESIDUAL PLOT ---------------------------------------------------------------------------------------------------------
 
-'''
-1. use proper analytical formula
-2. take difference 
-3. plot
-'''
-
-Experimental = np.zeros(n_steps)
-Residual = Experimental - RK_blood
 
 
 
